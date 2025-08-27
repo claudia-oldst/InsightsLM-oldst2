@@ -61,7 +61,22 @@ const transformMessage = (item: any, sourceMap: Map<string, any>): EnhancedChatM
       try {
         const parsedContent = JSON.parse(messageObj.content) as N8nAiResponseContent;
         
-        if (parsedContent.output && Array.isArray(parsedContent.output)) {
+        // Check if this is an error response from the fallback Supabase node
+        if (parsedContent.output && Array.isArray(parsedContent.output) && 
+            parsedContent.output.length === 1 && 
+            parsedContent.output[0].text && 
+            parsedContent.output[0].text.includes('Sorry, I encountered an error')) {
+          
+          // Handle error response - display user-friendly message
+          transformedMessage = {
+            type: 'ai',
+            content: 'I apologize, but I encountered an error while processing your request. This could be due to a temporary issue with the AI service or network connectivity. Please try asking your question again.',
+            additional_kwargs: messageObj.additional_kwargs,
+            response_metadata: messageObj.response_metadata,
+            tool_calls: messageObj.tool_calls,
+            invalid_tool_calls: messageObj.invalid_tool_calls
+          };
+        } else if (parsedContent.output && Array.isArray(parsedContent.output)) {
           // Transform the parsed content into segments and citations
           const segments: MessageSegment[] = [];
           const citations: Citation[] = [];
